@@ -1,0 +1,3 @@
+beaker-pyteal
+py-algorand-sdk
+pytest
