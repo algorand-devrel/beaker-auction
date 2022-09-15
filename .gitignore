@@ -3,4 +3,4 @@ __pycache__/
 *.teal
 app_spec.json
 abi.json
-web/src/beaker/*
+web/src/beaker/*.ts
