@@ -4,3 +4,4 @@ __pycache__/
 app_spec.json
 abi.json
 web/src/beaker/*.ts
+.venv/
