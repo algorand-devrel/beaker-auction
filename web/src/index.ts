@@ -1,15 +1,25 @@
 import algosdk from 'algosdk'
-// import { MyAlgoSession } from './wallets/myalgo'
-// import { WalletConnectSession } from './wallets/walletconnect'
-// import { AlgoSignerSession } from './wallets/algosigner'
-// import Utils from './utils'
+import { Auction } from './beaker/auction_client'
+import { MyAlgoSession } from './wallets/myalgo'
 
-try {
-    // @ts-ignore
-    const account = algosdk.generateAccount()
-    console.log(`Generated Algorand account: ${account.addr}`)
-    document.getElementById('status').innerHTML = 'SDK Status: Working!'
-} catch(e) {
-    console.error(e)
-    document.getElementById('status').innerHTML = `SDK Status: Error - ${e.message}`
+const myAlgo = new MyAlgoSession()
+const algodClient = new algosdk.Algodv2('', 'https://testnet-api.algonode.cloud', '')
+
+async function signer (txns: algosdk.Transaction[]) {
+  const sTxns = await myAlgo.signTxns(txns)
+  return sTxns.map(s => s.blob)
 }
+
+(async function () {
+  await myAlgo.getAccounts()
+  const account = myAlgo.accounts[0]
+
+  const appClient = new Auction({
+    client: algodClient,
+    signer,
+    sender: account.address
+  })
+
+  const [appId, appAddr, txId] = await appClient.create()
+  document.getElementById('status').innerHTML = `App created with id ${appId} and address ${appAddr} in tx ${txId}`
+})()

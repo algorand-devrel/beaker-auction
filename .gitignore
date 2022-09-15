@@ -1,3 +1,6 @@
 __pycache__/
 .pytest_cache/
 *.teal
+app_spec.json
+abi.json
+web/src/beaker/*

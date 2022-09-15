@@ -114,6 +114,9 @@ if __name__ == "__main__":
     if os.path.exists("abi.json"):
         os.remove("abi.json")
 
+    if os.path.exists("app_spec.json"):
+        os.remove("app_spec.json")
+
     with open("approval.teal", "w") as f:
         f.write(app.approval_program)
 
@@ -122,3 +125,6 @@ if __name__ == "__main__":
 
     with open("abi.json", "w") as f:
         f.write(json.dumps(app.contract.dictify(), indent=4))
+
+    with open("app_spec.json", "w") as f:
+        f.write(json.dumps(app.application_spec(), indent=4))

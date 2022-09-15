@@ -43,13 +43,15 @@ const config = {
             // Add your rules for custom modules here
             // Learn more about loaders from https://webpack.js.org/loaders/
         ],
+        noParse: [require.resolve('typescript/lib/typescript.js')],
     },
     resolve: {
         extensions: ['.tsx', '.ts', '.jsx', '.js', '...'],
         fallback: {
             crypto: require.resolve('crypto-browserify'),
             stream: require.resolve("stream-browserify"),
-            buffer: require.resolve("buffer")
+            buffer: require.resolve("buffer"),
+            fs: false
         }
     },
 };
