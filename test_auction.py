@@ -70,7 +70,7 @@ def send_first_bid():
         signer=first_bidder.signer,
     )
 
-    app_client.call(Auction.bid, payment=pay_txn, signer=first_bidder.signer)
+    app_client.call(Auction.bid, payment=pay_txn, previous_bidder=first_bidder.address, signer=first_bidder.signer)
 
 @pytest.fixture(scope="module")
 def send_second_bid():
@@ -97,8 +97,8 @@ def send_second_bid():
     app_client.call(
         Auction.bid,
         payment=pay_txn,
+        previous_bidder=first_bidder.address,
         signer=second_bidder.signer,
-        accounts=[first_bidder.address],
     )
 
 ##############

@@ -83,7 +83,7 @@ class Auction(Application):
         )
 
     @external
-    def bid(self, payment: abi.PaymentTransaction):
+    def bid(self, payment: abi.PaymentTransaction, previous_bidder: abi.Account):
         payment = payment.get()
 
         auction_end = self.auction_end.get()
@@ -96,7 +96,7 @@ class Auction(Application):
             Assert(payment.amount() > highest_bid),
             Assert(Txn.sender() == payment.sender()),
             # Return previous bid
-            If(highest_bidder != Bytes(""), self.pay(highest_bidder, highest_bid)),
+            If(highest_bidder != Bytes(""), Seq(Assert(highest_bidder == previous_bidder.address()), self.pay(highest_bidder, highest_bid))),
             # Set global state
             self.highest_bid.set(payment.amount()),
             self.highest_bidder.set(payment.sender()),
