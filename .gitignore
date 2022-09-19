@@ -7,3 +7,4 @@ web/src/beaker/*.ts
 .venv/
 ts_tests/node_modules/
 ts_tests/dist/
+auction_client.ts
