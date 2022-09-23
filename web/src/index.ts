@@ -31,6 +31,8 @@ buttons.connect.onclick = async () => {
 }
 
 buttons.create.onclick = async () => {
+  document.getElementById('status').innerHTML = 'Creating auction app...'
+
   const auctionApp = new Auction({
     client: algodClient,
     signer,
@@ -45,6 +47,8 @@ buttons.create.onclick = async () => {
 }
 
 buttons.start.onclick = async () => {
+  document.getElementById('status').innerHTML = 'Starting auction...'
+
   const auctionApp = new Auction({
     client: algodClient,
     signer,
@@ -65,11 +69,15 @@ buttons.start.onclick = async () => {
     length: BigInt(36_000)
   })
 
+  document.getElementById('status').innerHTML = `Auction started! See the app <a href='https://testnet.algoexplorer.io/application/${appId}'>here</a>`
+
   buttons.bid.disabled = false
   buttons.start.disabled = true
 }
 
 buttons.bid.onclick = async () => {
+    document.getElementById('status').innerHTML = 'Sending bid...'
+
     const auctionApp = new Auction({
       client: algodClient,
       signer,
@@ -80,7 +88,7 @@ buttons.bid.onclick = async () => {
     const suggestedParams = await algodClient.getTransactionParams().do()
     suggestedParams.fee = 2_000
     suggestedParams.flatFee = true
-    
+
     const payment = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
       suggestedParams,
       amount: amountInput.valueAsNumber,
@@ -106,4 +114,6 @@ buttons.bid.onclick = async () => {
       payment,
       previous_bidder,
     })
+
+    document.getElementById('status').innerHTML = `Bid sent! See the app <a href='https://testnet.algoexplorer.io/application/${appId}'>here</a>`
   }
