@@ -77,14 +77,33 @@ buttons.bid.onclick = async () => {
       appId
     })
   
+    const suggestedParams = await algodClient.getTransactionParams().do()
+    suggestedParams.fee = 2_000
+    suggestedParams.flatFee = true
+    
     const payment = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
-      suggestedParams: await algodClient.getTransactionParams().do(),
+      suggestedParams,
       amount: amountInput.valueAsNumber,
       from: accountsMenu.selectedOptions[0].value,
       to: algosdk.getApplicationAddress(appId)
     })
+
+    // use raw state due to some address encoding issues
+    const rawState = await auctionApp.getApplicationState(true)
+    const rawHighestBidder = rawState['686967686573745f626964646572'] as Uint8Array
+
+    let previous_bidder: string
+
+    if (rawHighestBidder.byteLength === 0) {
+      previous_bidder = accountsMenu.selectedOptions[0].value
+    } else {
+      previous_bidder = algosdk.encodeAddress(rawHighestBidder)
+    }
+
+    console.log(previous_bidder)
   
     await auctionApp.bid({
       payment,
+      previous_bidder,
     })
   }
