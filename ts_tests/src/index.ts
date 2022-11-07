@@ -22,24 +22,24 @@ async function createAuction () {
   creator = accounts[0] as SandboxAccount
 
   auctionApp = new Auction({
-    client: bkr.sandbox.getAlgodClient(),
+    client: bkr.clients.sandboxAlgod(),
     signer: creator.signer,
     sender: creator.addr
   })
 
-  appId = (await auctionApp.create())[0]
+  appId = (await auctionApp.create()).appId
 }
 
 async function startAuction () {
   auctionApp = new Auction({
-    client: bkr.sandbox.getAlgodClient(),
+    client: bkr.clients.sandboxAlgod(),
     signer: creator.signer,
     sender: creator.addr,
     appId
   })
 
   const payment = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
-    suggestedParams: await bkr.sandbox.getAlgodClient().getTransactionParams().do(),
+    suggestedParams: await bkr.clients.sandboxAlgod().getTransactionParams().do(),
     amount: 100_000,
     from: creator.addr,
     to: algosdk.getApplicationAddress(appId)
@@ -54,13 +54,13 @@ async function startAuction () {
 
 async function sendBid (amount: number, bidder: SandboxAccount) {
   const auctionApp = new Auction({
-    client: bkr.sandbox.getAlgodClient(),
+    client: bkr.clients.sandboxAlgod(),
     signer: bidder.signer,
     sender: bidder.addr,
     appId
   })
 
-  const sp = await bkr.sandbox.getAlgodClient().getTransactionParams().do()
+  const sp = await bkr.clients.sandboxAlgod().getTransactionParams().do()
   const payment = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
     suggestedParams: {...sp, fee: 2_000, flatFee: true},
     amount,
