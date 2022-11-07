@@ -39,9 +39,8 @@ buttons.create.onclick = async () => {
     sender: accountsMenu.selectedOptions[0].value
   })
 
-  const [createdAppId, appAddr, txId] = await auctionApp.create()
-  appId = createdAppId
-  document.getElementById('status').innerHTML = `App created with id ${appId} and address ${appAddr} in tx ${txId}. See it <a href='https://testnet.algoexplorer.io/application/${appId}'>here</a>`
+  const {appId, appAddress, txId} = await auctionApp.create()
+  document.getElementById('status').innerHTML = `App created with id ${appId} and address ${appAddress} in tx ${txId}. See it <a href='https://testnet.algoexplorer.io/application/${appId}'>here</a>`
   buttons.start.disabled = false
   buttons.create.disabled = true
 }

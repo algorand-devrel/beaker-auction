@@ -1,6 +1,7 @@
-import algosdk from 'algosdk'
-import { Auction } from './beaker/auction_client'
+import { describe, expect, beforeAll, it } from '@jest/globals'
+import { Auction } from '../src/beaker/auction_client'
 import * as bkr from 'beaker-ts'
+import algosdk from 'algosdk'
 import { SandboxAccount } from 'beaker-ts/lib/sandbox/accounts'
 
 let creator: SandboxAccount
@@ -9,10 +10,6 @@ let accounts: SandboxAccount[]
 let auctionApp: Auction
 let firstBidder: SandboxAccount
 let secondBidder: SandboxAccount
-
-function getStateAddr (state: any, key: string) {
-  return algosdk.encodeAddress(new Uint8Array(Buffer.from(state[key])))
-}
 
 async function getAccounts () {
   accounts = await bkr.sandbox.getAccounts()
@@ -62,7 +59,7 @@ async function sendBid (amount: number, bidder: SandboxAccount) {
 
   const sp = await bkr.clients.sandboxAlgod().getTransactionParams().do()
   const payment = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
-    suggestedParams: {...sp, fee: 2_000, flatFee: true},
+    suggestedParams: { ...sp, fee: 2_000, flatFee: true },
     amount,
     from: bidder.addr,
     to: algosdk.getApplicationAddress(appId)
