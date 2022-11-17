@@ -5,6 +5,7 @@ import os
 import json
 from typing import Final
 
+
 class Auction(Application):
     # Global Bytes (2)
     owner: Final[ApplicationStateValue] = ApplicationStateValue(
@@ -96,11 +97,18 @@ class Auction(Application):
             Assert(payment.amount() > highest_bid),
             Assert(Txn.sender() == payment.sender()),
             # Return previous bid
-            If(highest_bidder != Bytes(""), Seq(Assert(highest_bidder == previous_bidder.address()), self.pay(highest_bidder, highest_bid))),
+            If(
+                highest_bidder != Bytes(""),
+                Seq(
+                    Assert(highest_bidder == previous_bidder.address()),
+                    self.pay(highest_bidder, highest_bid),
+                ),
+            ),
             # Set global state
             self.highest_bid.set(payment.amount()),
             self.highest_bidder.set(payment.sender()),
         )
+
 
 if __name__ == "__main__":
     app = Auction()
