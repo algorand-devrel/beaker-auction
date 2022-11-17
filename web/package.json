@@ -1,7 +1,6 @@
 {
-  "name": "my-webpack-project",
+  "name": "beaker-auction",
   "version": "1.0.0",
-  "description": "My webpack project",
   "main": "index.js",
   "scripts": {
     "test": "jest",
