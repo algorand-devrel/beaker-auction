@@ -111,7 +111,7 @@ class Auction(Application):
 
 
 if __name__ == "__main__":
-    app = Auction()
+    app = Auction(7)
 
     if os.path.exists("approval.teal"):
         os.remove("approval.teal")
