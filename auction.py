@@ -9,30 +9,23 @@ from typing import Final
 class Auction(Application):
     # Global Bytes (2)
     owner: Final[ApplicationStateValue] = ApplicationStateValue(
-        stack_type=TealType.bytes
+        stack_type=TealType.bytes, default=Txn.sender()
     )
     highest_bidder: Final[ApplicationStateValue] = ApplicationStateValue(
-        stack_type=TealType.bytes
+        stack_type=TealType.bytes, default=Bytes("")
     )
 
     # Global Ints (2)
     auction_end: Final[ApplicationStateValue] = ApplicationStateValue(
-        stack_type=TealType.uint64
+        stack_type=TealType.uint64, default=Int(0)
     )
     highest_bid: Final[ApplicationStateValue] = ApplicationStateValue(
-        stack_type=TealType.uint64
+        stack_type=TealType.uint64, default=Int(0)
     )
 
     @create
     def create(self):
-        return Seq(
-            [
-                self.owner.set(Txn.sender()),
-                self.highest_bidder.set(Bytes("")),
-                self.highest_bid.set(Int(0)),
-                self.auction_end.set(Int(0)),
-            ]
-        )
+        return self.initialize_application_state()
 
     @external
     def start_auction(
