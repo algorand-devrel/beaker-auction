@@ -1,11 +1,14 @@
 from beaker import *
 from auction import *
+from algosdk.dryrun_results import DryrunResponse
 from algosdk.future import transaction
 from algosdk.encoding import encode_address
-from algosdk.atomic_transaction_composer import TransactionWithSigner
+from algosdk.atomic_transaction_composer import (
+    TransactionWithSigner,
+    AtomicTransactionComposer,
+)
 import pytest
-
-MIN_FEE = 1_000
+from beaker.client.state_decode import decode_state
 
 
 @pytest.fixture(scope="module")
@@ -79,7 +82,7 @@ def send_second_bid():
     second_bidder = accounts.pop()
 
     sp = app_client.get_suggested_params()
-    sp.fee = MIN_FEE * 2
+    sp.fee = sp.min_fee * 2
     first_bidder_amount = app_client.client.account_info(first_bidder.address)["amount"]
 
     pay_txn = TransactionWithSigner(
@@ -98,6 +101,35 @@ def send_second_bid():
         previous_bidder=first_bidder.address,
         signer=second_bidder.signer,
     )
+
+
+@pytest.fixture(scope="module")
+def end_auction():
+
+    sp = app_client.get_suggested_params()
+    sp.fee = sp.min_fee * 2
+    sp.flat_fee = True
+
+    atc = AtomicTransactionComposer()
+
+    app_client.add_method_call(
+        atc=atc,
+        method=Auction.end_auction,
+        sender=creator_acct.address,
+        suggested_params=sp,
+        signer=creator_acct.signer,
+    )
+
+    dr_req = transaction.create_dryrun(
+        app_client.client,
+        atc.gather_signatures(),
+        latest_timestamp=2524608000,  # <- January 1, 2050
+    )
+    dr_res = DryrunResponse(app_client.client.dryrun(dr_req))
+    global global_delta
+
+    # NOTE: decode_state usage depends on https://github.com/algorand-devrel/beaker/pull/130
+    global_delta = decode_state(dr_res.txns[0].global_delta)
 
 
 ##############
@@ -195,3 +227,30 @@ def test_second_bid_app_balance(
         app_client.client.account_info(app_client.app_addr)["amount"]
         == 30_000 + 100_000
     )
+
+
+###################
+# end_auction tests
+###################
+
+
+@pytest.mark.end_auction
+def test_end_auction_owner(
+    create_app, start_auction, send_first_bid, send_second_bid, end_auction
+):
+    addr = bytes.fromhex(global_delta["owner"])
+    assert encode_address(addr) == second_bidder.address
+
+
+@pytest.mark.end_auction
+def test_end_auction_highest_bidder(
+    create_app, start_auction, send_first_bid, send_second_bid, end_auction
+):
+    assert global_delta["highest_bidder"] == ""
+
+
+@pytest.mark.end_auction
+def test_end_auction_auction_end(
+    create_app, start_auction, send_first_bid, send_second_bid, end_auction
+):
+    assert global_delta["auction_end"] == 0
