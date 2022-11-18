@@ -25,17 +25,13 @@ class Auction(Application):
 
     @internal(TealType.none)
     def pay(self, receiver: Expr, amount: Expr):
-        return Seq(
-            InnerTxnBuilder.Begin(),
-            InnerTxnBuilder.SetFields(
-                {
-                    TxnField.type_enum: TxnType.Payment,
-                    TxnField.receiver: receiver,
-                    TxnField.amount: amount,
-                    TxnField.fee: Int(0),
-                }
-            ),
-            InnerTxnBuilder.Submit(),
+        return InnerTxnBuilder.Execute(
+            {
+                TxnField.type_enum: TxnType.Payment,
+                TxnField.receiver: receiver,
+                TxnField.amount: amount,
+                TxnField.fee: Int(0),
+            }
         )
 
     @create
@@ -104,7 +100,7 @@ class Auction(Application):
 
 
 if __name__ == "__main__":
-    app = Auction(7)
+    app = Auction(version=7)
 
     if os.path.exists("approval.teal"):
         os.remove("approval.teal")
