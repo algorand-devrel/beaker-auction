@@ -23,6 +23,21 @@ class Auction(Application):
         stack_type=TealType.uint64, default=Int(0)
     )
 
+    @internal(TealType.none)
+    def pay(self, receiver: Expr, amount: Expr):
+        return Seq(
+            InnerTxnBuilder.Begin(),
+            InnerTxnBuilder.SetFields(
+                {
+                    TxnField.type_enum: TxnType.Payment,
+                    TxnField.receiver: receiver,
+                    TxnField.amount: amount,
+                    TxnField.fee: Int(0),
+                }
+            ),
+            InnerTxnBuilder.Submit(),
+        )
+
     @create
     def create(self):
         return self.initialize_application_state()
@@ -43,37 +58,6 @@ class Auction(Application):
             # Set global state
             self.auction_end.set(Global.latest_timestamp() + length.get()),
             self.highest_bid.set(starting_price.get()),
-        )
-
-    @internal(TealType.none)
-    def pay(self, receiver: Expr, amount: Expr):
-        return Seq(
-            InnerTxnBuilder.Begin(),
-            InnerTxnBuilder.SetFields(
-                {
-                    TxnField.type_enum: TxnType.Payment,
-                    TxnField.receiver: receiver,
-                    TxnField.amount: amount,
-                    TxnField.fee: Int(0),
-                }
-            ),
-            InnerTxnBuilder.Submit(),
-        )
-
-    @external
-    def end_auction(self):
-        auction_end = self.auction_end.get()
-        highest_bid = self.highest_bid.get()
-        owner = self.owner.get()
-        highest_bidder = self.highest_bidder.get()
-
-        return Seq(
-            Assert(Global.latest_timestamp() > auction_end),
-            self.pay(owner, highest_bid),
-            # Set global state
-            self.auction_end.set(Int(0)),
-            self.owner.set(highest_bidder),
-            self.highest_bidder.set(Bytes("")),
         )
 
     @external
@@ -100,6 +84,22 @@ class Auction(Application):
             # Set global state
             self.highest_bid.set(payment.amount()),
             self.highest_bidder.set(payment.sender()),
+        )
+
+    @external
+    def end_auction(self):
+        auction_end = self.auction_end.get()
+        highest_bid = self.highest_bid.get()
+        owner = self.owner.get()
+        highest_bidder = self.highest_bidder.get()
+
+        return Seq(
+            Assert(Global.latest_timestamp() > auction_end),
+            self.pay(owner, highest_bid),
+            # Set global state
+            self.auction_end.set(Int(0)),
+            self.owner.set(highest_bidder),
+            self.highest_bidder.set(Bytes("")),
         )
 
 
