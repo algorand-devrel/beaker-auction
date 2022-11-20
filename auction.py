@@ -7,15 +7,13 @@ from typing import Final
 
 
 class Auction(Application):
-    # Global Bytes (2)
     owner: Final[ApplicationStateValue] = ApplicationStateValue(
-        stack_type=TealType.bytes, default=Txn.sender()
+        stack_type=TealType.bytes, default=Global.creator_address()
     )
     highest_bidder: Final[ApplicationStateValue] = ApplicationStateValue(
         stack_type=TealType.bytes, default=Bytes("")
     )
 
-    # Global Ints (2)
     auction_end: Final[ApplicationStateValue] = ApplicationStateValue(
         stack_type=TealType.uint64, default=Int(0)
     )
@@ -92,10 +90,9 @@ class Auction(Application):
         return Seq(
             Assert(Global.latest_timestamp() > auction_end),
             self.pay(owner, highest_bid),
-            # Set global state
-            self.auction_end.set(Int(0)),
             self.owner.set(highest_bidder),
-            self.highest_bidder.set(Bytes("")),
+            self.auction_end.set_default(),
+            self.highest_bidder.set_default(),
         )
 
 

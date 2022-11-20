@@ -1,5 +1,5 @@
 from beaker import *
-from auction import *
+from auction import Auction
 from algosdk.dryrun_results import DryrunResponse
 from algosdk.future import transaction
 from algosdk.encoding import encode_address
@@ -105,10 +105,8 @@ def send_second_bid():
 
 @pytest.fixture(scope="module")
 def end_auction():
-
     sp = app_client.get_suggested_params()
     sp.fee = sp.min_fee * 2
-    sp.flat_fee = True
 
     atc = AtomicTransactionComposer()
 
@@ -128,7 +126,6 @@ def end_auction():
     dr_res = DryrunResponse(app_client.client.dryrun(dr_req))
     global global_delta
 
-    # NOTE: decode_state usage depends on https://github.com/algorand-devrel/beaker/pull/130
     global_delta = decode_state(dr_res.txns[0].global_delta)
 
 
