@@ -30,6 +30,16 @@ const config = {
   module: {
     rules: [
       {
+        test: /\.(js)$/,
+        exclude: /node_modules\/(?!beaker-ts)/,
+        use: {
+          loader: 'babel-loader'
+        },
+        resolve: {
+          fullySpecified: false
+        }
+      },
+      {
         test: /\.(ts|tsx)$/i,
         loader: 'ts-loader',
         exclude: ['/node_modules/']
