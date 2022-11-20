@@ -4,7 +4,7 @@ import { MyAlgoSession } from './wallets/myalgo'
 
 const myAlgo = new MyAlgoSession()
 const algodClient = new algosdk.Algodv2('', 'https://testnet-api.algonode.cloud', '')
-let appId: number
+let auctionAppId: number
 
 const accountsMenu = document.getElementById('accounts') as HTMLSelectElement
 const amountInput = document.getElementById('amount') as HTMLInputElement
@@ -37,6 +37,7 @@ buttons.create.onclick = async () => {
   })
 
   const { appId, appAddress, txId } = await auctionApp.create()
+  auctionAppId = appId
   document.getElementById('status').innerHTML = `App created with id ${appId} and address ${appAddress} in tx ${txId}. See it <a href='https://testnet.algoexplorer.io/application/${appId}'>here</a>`
   buttons.start.disabled = false
   buttons.create.disabled = true
@@ -49,14 +50,14 @@ buttons.start.onclick = async () => {
     client: algodClient,
     signer,
     sender: accountsMenu.selectedOptions[0].value,
-    appId
+    appId: auctionAppId
   })
 
   const payment = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
     suggestedParams: await algodClient.getTransactionParams().do(),
     amount: 100_000,
     from: accountsMenu.selectedOptions[0].value,
-    to: algosdk.getApplicationAddress(appId)
+    to: algosdk.getApplicationAddress(auctionAppId)
   })
 
   await auctionApp.start_auction({
@@ -65,7 +66,7 @@ buttons.start.onclick = async () => {
     length: BigInt(36_000)
   })
 
-  document.getElementById('status').innerHTML = `Auction started! See the app <a href='https://testnet.algoexplorer.io/application/${appId}'>here</a>`
+  document.getElementById('status').innerHTML = `Auction started! See the app <a href='https://testnet.algoexplorer.io/application/${auctionAppId}'>here</a>`
 
   buttons.bid.disabled = false
   buttons.start.disabled = true
@@ -78,7 +79,7 @@ buttons.bid.onclick = async () => {
     client: algodClient,
     signer,
     sender: accountsMenu.selectedOptions[0].value,
-    appId
+    appId: auctionAppId
   })
 
   const suggestedParams = await algodClient.getTransactionParams().do()
@@ -89,7 +90,7 @@ buttons.bid.onclick = async () => {
     suggestedParams,
     amount: amountInput.valueAsNumber,
     from: accountsMenu.selectedOptions[0].value,
-    to: algosdk.getApplicationAddress(appId)
+    to: algosdk.getApplicationAddress(auctionAppId)
   })
 
   // use raw state due to some address encoding issues
@@ -111,5 +112,5 @@ buttons.bid.onclick = async () => {
     previous_bidder: prevBidder
   })
 
-  document.getElementById('status').innerHTML = `Bid sent! See the app <a href='https://testnet.algoexplorer.io/application/${appId}'>here</a>`
+  document.getElementById('status').innerHTML = `Bid sent! See the app <a href='https://testnet.algoexplorer.io/application/${auctionAppId}'>here</a>`
 }
