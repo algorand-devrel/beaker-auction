@@ -1,6 +1,7 @@
-import algosdk from 'algosdk'
-import { Auction } from './beaker/auction_client'
+import { describe, expect, beforeAll, it } from '@jest/globals'
+import { Auction } from '../src/beaker/auction_client'
 import * as bkr from 'beaker-ts'
+import algosdk from 'algosdk'
 import { SandboxAccount } from 'beaker-ts/lib/sandbox/accounts'
 
 let creator: SandboxAccount
@@ -10,10 +11,6 @@ let auctionApp: Auction
 let firstBidder: SandboxAccount
 let secondBidder: SandboxAccount
 
-function getStateAddr (state: any, key: string) {
-  return algosdk.encodeAddress(new Uint8Array(Buffer.from(state[key])))
-}
-
 async function getAccounts () {
   accounts = await bkr.sandbox.getAccounts()
 }
@@ -22,24 +19,24 @@ async function createAuction () {
   creator = accounts[0] as SandboxAccount
 
   auctionApp = new Auction({
-    client: bkr.sandbox.getAlgodClient(),
+    client: bkr.clients.sandboxAlgod(),
     signer: creator.signer,
     sender: creator.addr
   })
 
-  appId = (await auctionApp.create())[0]
+  appId = (await auctionApp.create()).appId
 }
 
 async function startAuction () {
   auctionApp = new Auction({
-    client: bkr.sandbox.getAlgodClient(),
+    client: bkr.clients.sandboxAlgod(),
     signer: creator.signer,
     sender: creator.addr,
     appId
   })
 
   const payment = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
-    suggestedParams: await bkr.sandbox.getAlgodClient().getTransactionParams().do(),
+    suggestedParams: await bkr.clients.sandboxAlgod().getTransactionParams().do(),
     amount: 100_000,
     from: creator.addr,
     to: algosdk.getApplicationAddress(appId)
@@ -54,15 +51,15 @@ async function startAuction () {
 
 async function sendBid (amount: number, bidder: SandboxAccount) {
   const auctionApp = new Auction({
-    client: bkr.sandbox.getAlgodClient(),
+    client: bkr.clients.sandboxAlgod(),
     signer: bidder.signer,
     sender: bidder.addr,
     appId
   })
 
-  const sp = await bkr.sandbox.getAlgodClient().getTransactionParams().do()
+  const sp = await bkr.clients.sandboxAlgod().getTransactionParams().do()
   const payment = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
-    suggestedParams: {...sp, fee: 2_000, flatFee: true},
+    suggestedParams: { ...sp, fee: 2_000, flatFee: true },
     amount,
     from: bidder.addr,
     to: algosdk.getApplicationAddress(appId)

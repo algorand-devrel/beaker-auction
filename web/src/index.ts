@@ -1,18 +1,15 @@
-import MyAlgoConnect from '@randlabs/myalgo-connect'
 import algosdk from 'algosdk'
 import { Auction } from './beaker/auction_client'
 import { MyAlgoSession } from './wallets/myalgo'
 
 const myAlgo = new MyAlgoSession()
 const algodClient = new algosdk.Algodv2('', 'https://testnet-api.algonode.cloud', '')
+let auctionAppId: number
 
-const buttonIds = ['create', 'connect', 'start', 'bid']
-const buttons: { [key: string]: HTMLButtonElement } = {}
 const accountsMenu = document.getElementById('accounts') as HTMLSelectElement
 const amountInput = document.getElementById('amount') as HTMLInputElement
-
-let appId: number
-
+const buttonIds = ['create', 'connect', 'start', 'bid']
+const buttons: { [key: string]: HTMLButtonElement } = {}
 buttonIds.forEach(id => {
   buttons[id] = document.getElementById(id) as HTMLButtonElement
 })
@@ -39,9 +36,9 @@ buttons.create.onclick = async () => {
     sender: accountsMenu.selectedOptions[0].value
   })
 
-  const [createdAppId, appAddr, txId] = await auctionApp.create()
-  appId = createdAppId
-  document.getElementById('status').innerHTML = `App created with id ${appId} and address ${appAddr} in tx ${txId}. See it <a href='https://testnet.algoexplorer.io/application/${appId}'>here</a>`
+  const { appId, appAddress, txId } = await auctionApp.create()
+  auctionAppId = appId
+  document.getElementById('status').innerHTML = `App created with id ${appId} and address ${appAddress} in tx ${txId}. See it <a href='https://testnet.algoexplorer.io/application/${appId}'>here</a>`
   buttons.start.disabled = false
   buttons.create.disabled = true
 }
@@ -53,14 +50,14 @@ buttons.start.onclick = async () => {
     client: algodClient,
     signer,
     sender: accountsMenu.selectedOptions[0].value,
-    appId
+    appId: auctionAppId
   })
 
   const payment = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
     suggestedParams: await algodClient.getTransactionParams().do(),
     amount: 100_000,
     from: accountsMenu.selectedOptions[0].value,
-    to: algosdk.getApplicationAddress(appId)
+    to: algosdk.getApplicationAddress(auctionAppId)
   })
 
   await auctionApp.start_auction({
@@ -69,51 +66,51 @@ buttons.start.onclick = async () => {
     length: BigInt(36_000)
   })
 
-  document.getElementById('status').innerHTML = `Auction started! See the app <a href='https://testnet.algoexplorer.io/application/${appId}'>here</a>`
+  document.getElementById('status').innerHTML = `Auction started! See the app <a href='https://testnet.algoexplorer.io/application/${auctionAppId}'>here</a>`
 
   buttons.bid.disabled = false
   buttons.start.disabled = true
 }
 
 buttons.bid.onclick = async () => {
-    document.getElementById('status').innerHTML = 'Sending bid...'
+  document.getElementById('status').innerHTML = 'Sending bid...'
 
-    const auctionApp = new Auction({
-      client: algodClient,
-      signer,
-      sender: accountsMenu.selectedOptions[0].value,
-      appId
-    })
-  
-    const suggestedParams = await algodClient.getTransactionParams().do()
-    suggestedParams.fee = 2_000
-    suggestedParams.flatFee = true
+  const auctionApp = new Auction({
+    client: algodClient,
+    signer,
+    sender: accountsMenu.selectedOptions[0].value,
+    appId: auctionAppId
+  })
 
-    const payment = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
-      suggestedParams,
-      amount: amountInput.valueAsNumber,
-      from: accountsMenu.selectedOptions[0].value,
-      to: algosdk.getApplicationAddress(appId)
-    })
+  const suggestedParams = await algodClient.getTransactionParams().do()
+  suggestedParams.fee = 2_000
+  suggestedParams.flatFee = true
 
-    // use raw state due to some address encoding issues
-    const rawState = await auctionApp.getApplicationState(true)
-    const rawHighestBidder = rawState['686967686573745f626964646572'] as Uint8Array
+  const payment = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
+    suggestedParams,
+    amount: amountInput.valueAsNumber,
+    from: accountsMenu.selectedOptions[0].value,
+    to: algosdk.getApplicationAddress(auctionAppId)
+  })
 
-    let previous_bidder: string
+  // use raw state due to some address encoding issues
+  const rawState = await auctionApp.getApplicationState(true)
+  const rawHighestBidder = rawState['686967686573745f626964646572'] as Uint8Array
 
-    if (rawHighestBidder.byteLength === 0) {
-      previous_bidder = accountsMenu.selectedOptions[0].value
-    } else {
-      previous_bidder = algosdk.encodeAddress(rawHighestBidder)
-    }
+  let prevBidder: string
 
-    console.log(previous_bidder)
-  
-    await auctionApp.bid({
-      payment,
-      previous_bidder,
-    })
-
-    document.getElementById('status').innerHTML = `Bid sent! See the app <a href='https://testnet.algoexplorer.io/application/${appId}'>here</a>`
+  if (rawHighestBidder.byteLength === 0) {
+    prevBidder = accountsMenu.selectedOptions[0].value
+  } else {
+    prevBidder = algosdk.encodeAddress(rawHighestBidder)
   }
+
+  console.log(prevBidder)
+
+  await auctionApp.bid({
+    payment,
+    previous_bidder: prevBidder
+  })
+
+  document.getElementById('status').innerHTML = `Bid sent! See the app <a href='https://testnet.algoexplorer.io/application/${auctionAppId}'>here</a>`
+}
