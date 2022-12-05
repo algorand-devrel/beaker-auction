@@ -36,7 +36,7 @@ class Auction(Application):
     def create(self):
         return self.initialize_application_state()
 
-    @external
+    @external(authorize=Authorize.only(owner))
     def start_auction(
         self,
         payment: abi.PaymentTransaction,
