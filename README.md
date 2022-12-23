@@ -14,8 +14,9 @@ This repo contains
 
 ## Python Tests (PyTest)
 
-1. `source .venv/bin/activate` to activate virtual environment
-2. `pytest` to execute tests
+1. `python auction.py` to generate artifacts (`.teal`, `.json` files)
+2. `source .venv/bin/activate` to activate virtual environment
+3. `pytest` to execute tests
 
 ## Web Front End
 
