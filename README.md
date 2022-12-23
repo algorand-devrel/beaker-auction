@@ -17,12 +17,6 @@ This repo contains
 1. `source .venv/bin/activate` to activate virtual environment
 2. `pytest` to execute tests
 
-## TypeScript Tests (Jest)
-
-1. `cd web/`
-2. `npm i` to install the nodeJS dependencies
-4. `npm run test` to compile and run Jest tests
-
 ## Web Front End
 
 1. `cd web/`
@@ -31,4 +25,10 @@ This repo contains
 4. `npm run serve` to serve and open web app
 
 To use the app you must have at least one account in MyAlgo funded on testnet. You can get testnet funds [here](https://bank.testnet.algorand.network/)
+
+## TypeScript Tests (Jest)
+
+1. `cd web/`
+2. `npm i` to install the nodeJS dependencies
+4. `npm run test` to compile and run Jest tests
 
