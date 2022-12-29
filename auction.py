@@ -5,11 +5,10 @@ import os
 import json
 from typing import Final
 
+APP_CREATOR = Seq(creator := AppParam.creator(Int(0)), creator.value())
+
 
 class Auction(Application):
-    owner: Final[ApplicationStateValue] = ApplicationStateValue(
-        stack_type=TealType.bytes, default=Global.creator_address()
-    )
     highest_bidder: Final[ApplicationStateValue] = ApplicationStateValue(
         stack_type=TealType.bytes, default=Bytes("")
     )
@@ -17,7 +16,16 @@ class Auction(Application):
     auction_end: Final[ApplicationStateValue] = ApplicationStateValue(
         stack_type=TealType.uint64, default=Int(0)
     )
+
     highest_bid: Final[ApplicationStateValue] = ApplicationStateValue(
+        stack_type=TealType.uint64, default=Int(0)
+    )
+
+    asa_amt: Final[ApplicationStateValue] = ApplicationStateValue(
+        stack_type=TealType.uint64, default=Int(0)
+    )
+
+    asa: Final[ApplicationStateValue] = ApplicationStateValue(
         stack_type=TealType.uint64, default=Int(0)
     )
 
@@ -36,17 +44,38 @@ class Auction(Application):
     def create(self):
         return self.initialize_application_state()
 
-    @external(authorize=Authorize.only(owner))
+    @external(authorize=Authorize.only(APP_CREATOR))
+    def opt_into_asset(self, asset: abi.Asset):
+        return Seq(
+            Assert(self.asa == Int(0)),
+            self.asa.set(asset.asset_id()),
+            InnerTxnBuilder.Execute(
+                {
+                    TxnField.type_enum: TxnType.AssetTransfer,
+                    TxnField.fee: Int(0),
+                    TxnField.asset_receiver: Global.current_application_address(),
+                    TxnField.xfer_asset: asset.asset_id(),
+                    TxnField.asset_amount: Int(0),
+                }
+            ),
+        )
+
+    @external(authorize=Authorize.only(APP_CREATOR))
     def start_auction(
         self,
-        payment: abi.PaymentTransaction,
         starting_price: abi.Uint64,
         length: abi.Uint64,
+        axfer: abi.AssetTransferTransaction,
     ):
         return Seq(
-            # Verify payment txn
-            Assert(payment.get().receiver() == Global.current_application_address()),
-            Assert(payment.get().amount() == Int(100_000)),
+            Assert(self.auction_end.get() == Int(0)),
+            # Process axfer
+            Assert(
+                axfer.get().asset_receiver() == Global.current_application_address()
+            ),
+            Assert(axfer.get().asset_close_to() == Global.zero_address()),
+            Assert(axfer.get().xfer_asset() == self.asa.get()),
+            self.asa_amt.set(axfer.get().asset_amount()),
             # Set global state
             self.auction_end.set(Global.latest_timestamp() + length.get()),
             self.highest_bid.set(starting_price.get()),
@@ -73,13 +102,42 @@ class Auction(Application):
         )
 
     @external
-    def end_auction(self):
+    def claim_bid(self):
         return Seq(
-            Assert(Global.latest_timestamp() > self.auction_end.get()),
-            self.pay(self.owner.get(), self.highest_bid.get()),
-            self.owner.set(self.highest_bidder.get()),
-            self.auction_end.set_default(),
-            self.highest_bidder.set_default(),
+            # Assert(Global.latest_timestamp() > self.auction_end.get()),
+            self.pay(APP_CREATOR, self.highest_bid.get()),
+        )
+
+    @external
+    def claim_asset(self, asset: abi.Asset, creator: abi.Account):
+        return Seq(
+            # Assert(Global.latest_timestamp() > self.auction_end.get()),
+            Assert(asset.asset_id() == self.asa.get()),
+            Assert(creator.address() == APP_CREATOR),
+            # Send ASA to highest bidder
+            InnerTxnBuilder.Execute(
+                {
+                    TxnField.type_enum: TxnType.AssetTransfer,
+                    TxnField.fee: Int(0),
+                    TxnField.xfer_asset: asset.asset_id(),
+                    TxnField.asset_amount: self.asa_amt.get(),
+                    TxnField.asset_receiver: self.highest_bidder.get(),
+                    # Close to creator in caseof additional ASA being sent throughout duration of auction
+                    TxnField.asset_close_to: APP_CREATOR,
+                }
+            ),
+        )
+
+    @delete
+    def delete():
+        return InnerTxnBuilder.Execute(
+            {
+                TxnField.type_enum: TxnType.Payment,
+                TxnField.fee: Int(0),
+                TxnField.receiver: APP_CREATOR,
+                TxnField.amount: Int(0),
+                TxnField.close_remainder_to: APP_CREATOR,
+            }
         )
 
 
