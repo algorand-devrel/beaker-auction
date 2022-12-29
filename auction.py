@@ -43,12 +43,10 @@ class Auction(Application):
         starting_price: abi.Uint64,
         length: abi.Uint64,
     ):
-        payment = payment.get()
-
         return Seq(
             # Verify payment txn
-            Assert(payment.receiver() == Global.current_application_address()),
-            Assert(payment.amount() == Int(100_000)),
+            Assert(payment.get().receiver() == Global.current_application_address()),
+            Assert(payment.get().amount() == Int(100_000)),
             # Set global state
             self.auction_end.set(Global.latest_timestamp() + length.get()),
             self.highest_bid.set(starting_price.get()),
@@ -56,41 +54,30 @@ class Auction(Application):
 
     @external
     def bid(self, payment: abi.PaymentTransaction, previous_bidder: abi.Account):
-        payment = payment.get()
-
-        auction_end = self.auction_end.get()
-        highest_bidder = self.highest_bidder.get()
-        highest_bid = self.highest_bid.get()
-
         return Seq(
-            Assert(Global.latest_timestamp() < auction_end),
+            Assert(Global.latest_timestamp() < self.auction_end.get()),
             # Verify payment transaction
-            Assert(payment.amount() > highest_bid),
-            Assert(Txn.sender() == payment.sender()),
+            Assert(payment.get().amount() > self.highest_bid.get()),
+            Assert(Txn.sender() == payment.get().sender()),
             # Return previous bid
             If(
-                highest_bidder != Bytes(""),
+                self.highest_bidder.get() != Bytes(""),
                 Seq(
-                    Assert(highest_bidder == previous_bidder.address()),
-                    self.pay(highest_bidder, highest_bid),
+                    Assert(self.highest_bidder.get() == previous_bidder.address()),
+                    self.pay(self.highest_bidder.get(), self.highest_bid.get()),
                 ),
             ),
             # Set global state
-            self.highest_bid.set(payment.amount()),
-            self.highest_bidder.set(payment.sender()),
+            self.highest_bid.set(payment.get().amount()),
+            self.highest_bidder.set(payment.get().sender()),
         )
 
     @external
     def end_auction(self):
-        auction_end = self.auction_end.get()
-        highest_bid = self.highest_bid.get()
-        owner = self.owner.get()
-        highest_bidder = self.highest_bidder.get()
-
         return Seq(
-            Assert(Global.latest_timestamp() > auction_end),
-            self.pay(owner, highest_bid),
-            self.owner.set(highest_bidder),
+            Assert(Global.latest_timestamp() > self.auction_end.get()),
+            self.pay(self.owner.get(), self.highest_bid.get()),
+            self.owner.set(self.highest_bidder.get()),
             self.auction_end.set_default(),
             self.highest_bidder.set_default(),
         )
