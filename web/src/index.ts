@@ -1,6 +1,9 @@
 import algosdk from 'algosdk'
 import { Auction } from './beaker/auction_client'
 import { MyAlgoSession } from './wallets/myalgo'
+import AuctionABI from '../abi.json'
+
+const auctionABIContract = new algosdk.ABIContract(AuctionABI)
 
 const myAlgo = new MyAlgoSession()
 const algodClient = new algosdk.Algodv2('', 'https://testnet-api.algonode.cloud', '')
@@ -8,6 +11,8 @@ let auctionAppId: number
 
 const accountsMenu = document.getElementById('accounts') as HTMLSelectElement
 const amountInput = document.getElementById('amount') as HTMLInputElement
+const asaInput = document.getElementById('asa') as HTMLInputElement
+const asaAmountInput = document.getElementById('asa-amount') as HTMLInputElement
 const buttonIds = ['create', 'connect', 'start', 'bid']
 const buttons: { [key: string]: HTMLButtonElement } = {}
 buttonIds.forEach(id => {
@@ -46,25 +51,51 @@ buttons.create.onclick = async () => {
 buttons.start.onclick = async () => {
   document.getElementById('status').innerHTML = 'Starting auction...'
 
-  const auctionApp = new Auction({
-    client: algodClient,
-    signer,
-    sender: accountsMenu.selectedOptions[0].value,
-    appId: auctionAppId
-  })
+  const atc = new algosdk.AtomicTransactionComposer()
+  const sender = accountsMenu.selectedOptions[0].value
+  const asa = asaInput.valueAsNumber
+  const suggestedParams = await algodClient.getTransactionParams().do()
 
+  // Fund app
   const payment = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
-    suggestedParams: await algodClient.getTransactionParams().do(),
-    amount: 100_000,
-    from: accountsMenu.selectedOptions[0].value,
+    suggestedParams,
+    amount: 200_000,
+    from: sender,
     to: algosdk.getApplicationAddress(auctionAppId)
   })
+  atc.addTransaction({ txn: payment, signer })
 
-  await auctionApp.start_auction({
-    payment,
-    starting_price: BigInt(amountInput.valueAsNumber),
-    length: BigInt(36_000)
+  // Opt app into ASA
+  atc.addMethodCall(
+    {
+      appID: auctionAppId,
+      method: algosdk.getMethodByName(auctionABIContract.methods, 'opt_into_asset'),
+      sender,
+      signer,
+      suggestedParams: { ...suggestedParams, fee: 2_000, flatFee: true },
+      methodArgs: [asa]
+    })
+
+  const axfer = algosdk.makeAssetTransferTxnWithSuggestedParamsFromObject({
+    suggestedParams,
+    from: sender,
+    amount: asaAmountInput.valueAsNumber,
+    to: algosdk.getApplicationAddress(auctionAppId),
+    assetIndex: asa
   })
+
+  // Start auction
+  atc.addMethodCall(
+    {
+      appID: auctionAppId,
+      method: algosdk.getMethodByName(auctionABIContract.methods, 'start_auction'),
+      sender,
+      signer,
+      suggestedParams: await algodClient.getTransactionParams().do(),
+      methodArgs: [amountInput.valueAsNumber, 36_000, { txn: axfer, signer }]
+    })
+
+  await atc.execute(algodClient, 3)
 
   document.getElementById('status').innerHTML = `Auction started! See the app <a href='https://testnet.algoexplorer.io/application/${auctionAppId}'>here</a>`
 
