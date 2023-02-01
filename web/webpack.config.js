@@ -56,13 +56,7 @@ const config = {
     noParse: [require.resolve('typescript/lib/typescript.js')]
   },
   resolve: {
-    extensions: ['.tsx', '.ts', '.jsx', '.js', '...'],
-    fallback: {
-      crypto: require.resolve('crypto-browserify'),
-      stream: require.resolve('stream-browserify'),
-      buffer: require.resolve('buffer'),
-      fs: false
-    }
+    extensions: ['.tsx', '.ts', '.jsx', '.js', '...']
   }
 }
 
