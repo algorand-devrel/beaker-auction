@@ -1,9 +1,6 @@
 import algosdk from 'algosdk'
 import { Auction } from './beaker/auction_client'
 import { MyAlgoSession } from './wallets/myalgo'
-import AuctionABI from '../abi.json'
-
-const auctionABIContract = new algosdk.ABIContract(AuctionABI)
 
 const myAlgo = new MyAlgoSession()
 const algodClient = new algosdk.Algodv2('', 'https://testnet-api.algonode.cloud', '')
@@ -34,11 +31,12 @@ buttons.connect.onclick = async () => {
 
 buttons.create.onclick = async () => {
   document.getElementById('status').innerHTML = 'Creating auction app...'
+  const sender = accountsMenu.selectedOptions[0].value
 
   const auctionApp = new Auction({
     client: algodClient,
     signer,
-    sender: accountsMenu.selectedOptions[0].value
+    sender
   })
 
   const { appId, appAddress, txId } = await auctionApp.create()
@@ -50,9 +48,11 @@ buttons.create.onclick = async () => {
 
 buttons.start.onclick = async () => {
   document.getElementById('status').innerHTML = 'Starting auction...'
+  const sender = accountsMenu.selectedOptions[0].value
+
+  const auctionApp = new Auction({ sender, signer, appId: auctionAppId, client: algodClient })
 
   const atc = new algosdk.AtomicTransactionComposer()
-  const sender = accountsMenu.selectedOptions[0].value
   const asa = asaInput.valueAsNumber
   const suggestedParams = await algodClient.getTransactionParams().do()
 
@@ -69,7 +69,7 @@ buttons.start.onclick = async () => {
   atc.addMethodCall(
     {
       appID: auctionAppId,
-      method: algosdk.getMethodByName(auctionABIContract.methods, 'opt_into_asset'),
+      method: algosdk.getMethodByName(auctionApp.methods, 'opt_into_asset'),
       sender,
       signer,
       suggestedParams: { ...suggestedParams, fee: 2_000, flatFee: true },
@@ -88,7 +88,7 @@ buttons.start.onclick = async () => {
   atc.addMethodCall(
     {
       appID: auctionAppId,
-      method: algosdk.getMethodByName(auctionABIContract.methods, 'start_auction'),
+      method: algosdk.getMethodByName(auctionApp.methods, 'start_auction'),
       sender,
       signer,
       suggestedParams: await algodClient.getTransactionParams().do(),
@@ -105,11 +105,12 @@ buttons.start.onclick = async () => {
 
 buttons.bid.onclick = async () => {
   document.getElementById('status').innerHTML = 'Sending bid...'
+  const sender = accountsMenu.selectedOptions[0].value
 
   const auctionApp = new Auction({
     client: algodClient,
     signer,
-    sender: accountsMenu.selectedOptions[0].value,
+    sender,
     appId: auctionAppId
   })
 
@@ -120,7 +121,7 @@ buttons.bid.onclick = async () => {
   const payment = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
     suggestedParams,
     amount: amountInput.valueAsNumber,
-    from: accountsMenu.selectedOptions[0].value,
+    from: sender,
     to: algosdk.getApplicationAddress(auctionAppId)
   })
 
@@ -131,7 +132,7 @@ buttons.bid.onclick = async () => {
   let prevBidder: string
 
   if (rawHighestBidder.byteLength === 0) {
-    prevBidder = accountsMenu.selectedOptions[0].value
+    prevBidder = sender
   } else {
     prevBidder = algosdk.encodeAddress(rawHighestBidder)
   }

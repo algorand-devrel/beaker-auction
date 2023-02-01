@@ -1,7 +1,7 @@
 from beaker import *
 from auction import Auction
 from algosdk.dryrun_results import DryrunResponse
-from algosdk.future import transaction
+from algosdk import transaction
 from algosdk.encoding import encode_address
 from algosdk.atomic_transaction_composer import (
     TransactionWithSigner,
@@ -197,6 +197,7 @@ def claim_asset():
         method=Auction.claim_asset,
         asset=asa,
         creator=creator_acct.address,
+        asset_creator=creator_acct.address,
         suggested_params=sp,
         sender=second_bidder.address,
         signer=second_bidder.signer,

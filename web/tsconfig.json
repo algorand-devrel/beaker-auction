@@ -7,7 +7,6 @@
     "allowJs": true,
     "moduleResolution": "node",
     "sourceMap": true,
-    "resolveJsonModule": true
   },
   "files": ["src/index.ts"]
 }

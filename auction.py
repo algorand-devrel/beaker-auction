@@ -109,7 +109,9 @@ class Auction(Application):
         )
 
     @external
-    def claim_asset(self, asset: abi.Asset, creator: abi.Account):
+    def claim_asset(
+        self, asset: abi.Asset, creator: abi.Account, asset_creator: abi.Account
+    ):
         return Seq(
             # Assert(Global.latest_timestamp() > self.auction_end.get()),
             Assert(asset.asset_id() == self.asa.get()),
@@ -123,7 +125,9 @@ class Auction(Application):
                     TxnField.asset_amount: self.asa_amt.get(),
                     TxnField.asset_receiver: self.highest_bidder.get(),
                     # Close to creator in caseof additional ASA being sent throughout duration of auction
-                    TxnField.asset_close_to: APP_CREATOR,
+                    TxnField.asset_close_to: Seq(
+                        creator := asset.params().creator_address(), creator.value()
+                    ),
                 }
             ),
         )
