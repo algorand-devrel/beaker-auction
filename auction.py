@@ -48,6 +48,8 @@ class Auction(Application):
         return Seq(
             # Verify a ASA hasn't already been opted into
             Assert(self.asa == Int(0)),
+            # Save ASA ID in global state
+            self.asa.set(asset.asset_id()),
             # Submit opt-in transaction: 0 asset transfer to self
             InnerTxnBuilder.Execute(
                 {
@@ -58,8 +60,6 @@ class Auction(Application):
                     TxnField.asset_amount: Int(0),
                 }
             ),
-            # Save ASA ID in global state
-            self.asa.set(asset.asset_id()),
         )
 
     @external(authorize=Authorize.only(Global.creator_address()))
@@ -106,10 +106,7 @@ class Auction(Application):
             # Return previous bid if there was one
             If(
                 self.highest_bidder.get() != Bytes(""),
-                Seq(
-                    Assert(self.highest_bidder.get() == previous_bidder.address()),
-                    self.pay(self.highest_bidder.get(), self.highest_bid.get()),
-                ),
+                self.pay(previous_bidder.address(), self.highest_bid.get()),
             ),
             # Set global state
             self.highest_bid.set(payment.get().amount()),
@@ -131,21 +128,18 @@ class Auction(Application):
         return Seq(
             # Auction end check is commented out for automated testing
             # Assert(Global.latest_timestamp() > self.auction_end.get()),
-            # Verify inputs
-            Assert(asset.asset_id() == self.asa.get()),
-            Assert(app_creator.address() == Global.creator_address()),
             # Send ASA to highest bidder
             InnerTxnBuilder.Execute(
                 {
                     TxnField.type_enum: TxnType.AssetTransfer,
                     TxnField.fee: Int(0),  # cover fee with outer txn
-                    TxnField.xfer_asset: asset.asset_id(),
-                    TxnField.asset_amount: self.asa_amt.get(),
-                    TxnField.asset_receiver: self.highest_bidder.get(),
+                    TxnField.xfer_asset: self.asa,
+                    TxnField.asset_amount: self.asa_amt,
+                    TxnField.asset_receiver: self.highest_bidder,
                     # Close to asset creator since they are guranteed to be opted into the asset
                     TxnField.asset_close_to: Seq(
-                        app_creator := asset.params().creator_address(),
-                        app_creator.value(),
+                        creator := asset.params().creator_address(),
+                        creator.value(),
                     ),
                 }
             ),

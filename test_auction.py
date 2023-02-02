@@ -196,7 +196,7 @@ def claim_asset():
         atc=atc,
         method=Auction.claim_asset,
         asset=asa,
-        creator=creator_acct.address,
+        app_creator=creator_acct.address,
         asset_creator=creator_acct.address,
         suggested_params=sp,
         sender=second_bidder.address,
