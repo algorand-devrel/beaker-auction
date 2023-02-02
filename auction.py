@@ -27,17 +27,6 @@ class Auction(Application):
         stack_type=TealType.uint64, default=Int(0)
     )
 
-    @internal(TealType.none)
-    def pay(self, receiver: Expr, amount: Expr):
-        return InnerTxnBuilder.Execute(
-            {
-                TxnField.type_enum: TxnType.Payment,
-                TxnField.receiver: receiver,
-                TxnField.amount: amount,
-                TxnField.fee: Int(0),
-            }
-        )
-
     @create
     def create(self):
         return self.initialize_application_state()
@@ -77,6 +66,17 @@ class Auction(Application):
             # Set global state
             self.auction_end.set(Global.latest_timestamp() + length.get()),
             self.highest_bid.set(starting_price.get()),
+        )
+
+    @internal(TealType.none)
+    def pay(self, receiver: Expr, amount: Expr):
+        return InnerTxnBuilder.Execute(
+            {
+                TxnField.type_enum: TxnType.Payment,
+                TxnField.receiver: receiver,
+                TxnField.amount: amount,
+                TxnField.fee: Int(0),
+            }
         )
 
     @external
@@ -144,7 +144,7 @@ class Auction(Application):
 
 
 if __name__ == "__main__":
-    app = Auction(version=7)
+    app = Auction(version=8)
 
     if os.path.exists("approval.teal"):
         os.remove("approval.teal")
