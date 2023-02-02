@@ -5,8 +5,6 @@ import os
 import json
 from typing import Final
 
-APP_CREATOR = Seq(creator := AppParam.creator(Int(0)), creator.value())
-
 
 class Auction(Application):
     highest_bidder: Final[ApplicationStateValue] = ApplicationStateValue(
@@ -44,7 +42,7 @@ class Auction(Application):
     def create(self):
         return self.initialize_application_state()
 
-    @external(authorize=Authorize.only(APP_CREATOR))
+    @external(authorize=Authorize.only(Global.creator_address()))
     def opt_into_asset(self, asset: abi.Asset):
         return Seq(
             Assert(self.asa == Int(0)),
@@ -60,7 +58,7 @@ class Auction(Application):
             ),
         )
 
-    @external(authorize=Authorize.only(APP_CREATOR))
+    @external(authorize=Authorize.only(Global.creator_address()))
     def start_auction(
         self,
         starting_price: abi.Uint64,
@@ -105,7 +103,7 @@ class Auction(Application):
     def claim_bid(self):
         return Seq(
             # Assert(Global.latest_timestamp() > self.auction_end.get()),
-            self.pay(APP_CREATOR, self.highest_bid.get()),
+            self.pay(Global.creator_address(), self.highest_bid.get()),
         )
 
     @external
@@ -115,7 +113,7 @@ class Auction(Application):
         return Seq(
             # Assert(Global.latest_timestamp() > self.auction_end.get()),
             Assert(asset.asset_id() == self.asa.get()),
-            Assert(creator.address() == APP_CREATOR),
+            Assert(creator.address() == Global.creator_address()),
             # Send ASA to highest bidder
             InnerTxnBuilder.Execute(
                 {
@@ -138,9 +136,9 @@ class Auction(Application):
             {
                 TxnField.type_enum: TxnType.Payment,
                 TxnField.fee: Int(0),
-                TxnField.receiver: APP_CREATOR,
+                TxnField.receiver: Global.creator_address(),
                 TxnField.amount: Int(0),
-                TxnField.close_remainder_to: APP_CREATOR,
+                TxnField.close_remainder_to: Global.creator_address(),
             }
         )
 
