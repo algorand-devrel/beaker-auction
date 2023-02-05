@@ -76,7 +76,6 @@ class Auction(Application):
             Assert(
                 axfer.get().asset_receiver() == Global.current_application_address()
             ),
-            Assert(axfer.get().asset_close_to() == Global.zero_address()),
             Assert(axfer.get().xfer_asset() == self.asa.get()),
             # Set global state
             self.asa_amt.set(axfer.get().asset_amount()),
