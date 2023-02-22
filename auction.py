@@ -76,7 +76,6 @@ class Auction(Application):
             Assert(
                 axfer.get().asset_receiver() == Global.current_application_address()
             ),
-            Assert(axfer.get().xfer_asset() == self.asa.get()),
             # Set global state
             self.asa_amt.set(axfer.get().asset_amount()),
             self.auction_end.set(Global.latest_timestamp() + length.get()),
@@ -121,9 +120,7 @@ class Auction(Application):
         )
 
     @external
-    def claim_asset(
-        self, asset: abi.Asset, app_creator: abi.Account, asset_creator: abi.Account
-    ):
+    def claim_asset(self, asset: abi.Asset, asset_creator: abi.Account):
         return Seq(
             # Auction end check is commented out for automated testing
             # Assert(Global.latest_timestamp() > self.auction_end.get()),
@@ -136,10 +133,7 @@ class Auction(Application):
                     TxnField.asset_amount: self.asa_amt,
                     TxnField.asset_receiver: self.highest_bidder,
                     # Close to asset creator since they are guranteed to be opted into the asset
-                    TxnField.asset_close_to: Seq(
-                        creator := asset.params().creator_address(),
-                        creator.value(),
-                    ),
+                    TxnField.asset_close_to: asset_creator.address(),
                 }
             ),
         )
