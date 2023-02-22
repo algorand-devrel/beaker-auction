@@ -1,6 +1,7 @@
 import algosdk from 'algosdk'
 import { Auction } from './beaker/auction_client'
 import { MyAlgoSession } from './wallets/myalgo'
+import Utils from './utils'
 
 const myAlgo = new MyAlgoSession()
 const algodClient = new algosdk.Algodv2('', 'https://testnet-api.algonode.cloud', '')
@@ -41,7 +42,7 @@ buttons.create.onclick = async () => {
 
   const { appId, appAddress, txId } = await auctionApp.create()
   auctionAppId = appId
-  document.getElementById('status').innerHTML = `App created with id ${appId} and address ${appAddress} in tx ${txId}. See it <a href='https://testnet.algoexplorer.io/application/${appId}'>here</a>`
+  document.getElementById('status').innerHTML = `App created with id ${appId} and address ${appAddress} in tx ${txId}. See it <a href='https://testnet.algoscan.app/app/${appId}'>here</a>`
   buttons.start.disabled = false
   buttons.create.disabled = true
 }
@@ -97,7 +98,7 @@ buttons.start.onclick = async () => {
 
   await atc.execute(algodClient, 3)
 
-  document.getElementById('status').innerHTML = `Auction started! See the app <a href='https://testnet.algoexplorer.io/application/${auctionAppId}'>here</a>`
+  document.getElementById('status').innerHTML = `Auction started! See the app <a href='https://testnet.algoscan.app/app/${auctionAppId}'>here</a>`
 
   buttons.bid.disabled = false
   buttons.start.disabled = true
@@ -125,24 +126,14 @@ buttons.bid.onclick = async () => {
     to: algosdk.getApplicationAddress(auctionAppId)
   })
 
-  // use raw state due to some address encoding issues
-  const rawState = await auctionApp.getApplicationState(true)
-  const rawHighestBidder = rawState['686967686573745f626964646572'] as Uint8Array
-
-  let prevBidder: string
-
-  if (rawHighestBidder.byteLength === 0) {
-    prevBidder = sender
-  } else {
-    prevBidder = algosdk.encodeAddress(rawHighestBidder)
-  }
-
-  console.log(prevBidder)
+  const state = (await algodClient.getApplicationByID(auctionAppId).do()).params['global-state']
+  const readableState = Utils.getReadableState(state)
+  const prevBidder = readableState.highest_bidder.address || sender
 
   await auctionApp.bid({
     payment,
     previous_bidder: prevBidder
   })
 
-  document.getElementById('status').innerHTML = `Bid sent! See the app <a href='https://testnet.algoexplorer.io/application/${auctionAppId}'>here</a>`
+  document.getElementById('status').innerHTML = `Bid sent! See the app <a href='https://testnet.algoscan.app/app/${auctionAppId}'>here</a>`
 }
