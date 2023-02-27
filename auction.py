@@ -102,7 +102,7 @@ class Auction(Application):
             # Return previous bid if there was one
             If(
                 self.highest_bidder.get() != Bytes(""),
-                self.pay(previous_bidder.address(), self.highest_bid.get()),
+                self.pay(self.highest_bidder.get(), self.highest_bid.get()),
             ),
             # Set global state
             self.highest_bid.set(payment.get().amount()),
