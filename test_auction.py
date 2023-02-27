@@ -1,5 +1,8 @@
+#############################################
+# NOTE: This has not been updated for V1 yet!
+#############################################
+
 from beaker import *
-from auction import Auction
 from algosdk.dryrun_results import DryrunResponse
 from algosdk import transaction
 from algosdk.encoding import encode_address
@@ -30,8 +33,8 @@ def create_app():
     creator_acct = accounts.pop()
 
     app_client = client.ApplicationClient(
+        app=open("./application.json").read(),
         client=sandbox.get_algod_client(),
-        app=Auction(version=6),
         signer=creator_acct.signer,
     )
 
@@ -67,7 +70,7 @@ def opt_in():
     # Call opt_into_asset
     sp = app_client.get_suggested_params()
     sp.fee = sp.min_fee * 2
-    app_client.call(Auction.opt_into_asset, asset=asa, suggested_params=sp)
+    app_client.call("opt_into_asset", asset=asa, suggested_params=sp)
 
 
 @pytest.fixture(scope="module")
@@ -85,9 +88,7 @@ def start_auction():
         signer=creator_acct.signer,
     )
 
-    app_client.call(
-        Auction.start_auction, axfer=axfer, starting_price=10_000, length=36_000
-    )
+    app_client.call("start_auction", axfer=axfer, starting_price=10_000, length=36_000)
 
 
 @pytest.fixture(scope="module")
@@ -105,7 +106,7 @@ def send_first_bid():
     )
 
     app_client.call(
-        Auction.bid,
+        "bid",
         payment=pay_txn,
         previous_bidder=first_bidder.address,
         signer=first_bidder.signer,
@@ -133,7 +134,7 @@ def send_second_bid():
     )
 
     app_client.call(
-        Auction.bid,
+        "bid",
         payment=pay_txn,
         previous_bidder=first_bidder.address,
         signer=second_bidder.signer,
@@ -149,7 +150,7 @@ def end_auction():
 
     app_client.add_method_call(
         atc=atc,
-        method=Auction.end_auction,
+        method="end_auction",
         sender=creator_acct.address,
         suggested_params=sp,
         signer=creator_acct.signer,
@@ -170,7 +171,7 @@ def end_auction():
 def claim_bid():
     sp = app_client.get_suggested_params()
     sp.fee = sp.min_fee * 2
-    app_client.call(Auction.claim_bid, suggested_params=sp)
+    app_client.call("claim_bid", suggested_params=sp)
 
 
 @pytest.fixture(scope="module")
@@ -194,9 +195,8 @@ def claim_asset():
 
     app_client.add_method_call(
         atc=atc,
-        method=Auction.claim_asset,
+        method="claim_asset",
         asset=asa,
-        app_creator=creator_acct.address,
         asset_creator=creator_acct.address,
         suggested_params=sp,
         sender=second_bidder.address,
@@ -213,17 +213,17 @@ def claim_asset():
 
 @pytest.mark.create
 def test_create_highest_bidder(create_app):
-    assert app_client.get_application_state()["highest_bidder"] == ""
+    assert app_client.get_global_state()["highest_bidder"] == ""
 
 
 @pytest.mark.create
 def test_create_highest_bid(create_app):
-    assert app_client.get_application_state()["highest_bid"] == 0
+    assert app_client.get_global_state()["highest_bid"] == 0
 
 
 @pytest.mark.create
 def test_create_auction_end(create_app):
-    assert app_client.get_application_state()["auction_end"] == 0
+    assert app_client.get_global_state()["auction_end"] == 0
 
 
 #############
@@ -243,12 +243,12 @@ def test_opt_in(create_app, opt_in):
 
 @pytest.mark.start_auction
 def test_start_auction_end(create_app, opt_in, start_auction):
-    assert app_client.get_application_state()["auction_end"] != 0
+    assert app_client.get_global_state()["auction_end"] != 0
 
 
 @pytest.mark.start_auction
 def test_start_auction_highest_bid(create_app, opt_in, start_auction):
-    assert app_client.get_application_state()["highest_bid"] == 10_000
+    assert app_client.get_global_state()["highest_bid"] == 10_000
 
 
 #################
@@ -258,12 +258,12 @@ def test_start_auction_highest_bid(create_app, opt_in, start_auction):
 
 @pytest.mark.first_bid
 def test_first_bid_highest_bid(create_app, opt_in, start_auction, send_first_bid):
-    assert app_client.get_application_state()["highest_bid"] == 20_000
+    assert app_client.get_global_state()["highest_bid"] == 20_000
 
 
 @pytest.mark.first_bid
 def test_first_bid_highest_bidder(create_app, opt_in, start_auction, send_first_bid):
-    addr = bytes.fromhex(app_client.get_application_state()["highest_bidder"])
+    addr = bytes.fromhex(app_client.get_global_state()["highest_bidder"])
     assert encode_address(addr) == first_bidder.address
 
 
@@ -276,14 +276,14 @@ def test_first_bid_highest_bidder(create_app, opt_in, start_auction, send_first_
 def test_second_bid_highest_bid(
     create_app, opt_in, start_auction, send_first_bid, send_second_bid
 ):
-    assert app_client.get_application_state()["highest_bid"] == 30_000
+    assert app_client.get_global_state()["highest_bid"] == 30_000
 
 
 @pytest.mark.second_bid
 def test_second_bid_highest_bidder(
     create_app, opt_in, start_auction, send_first_bid, send_second_bid
 ):
-    addr = bytes.fromhex(app_client.get_application_state()["highest_bidder"])
+    addr = bytes.fromhex(app_client.get_global_state()["highest_bidder"])
     assert encode_address(addr) == second_bidder.address
 
 

@@ -1,8 +1,8 @@
 __pycache__/
 .pytest_cache/
 *.teal
-app_spec.json
-abi.json
+application.json
+contract.json
 web/src/beaker/*.ts
 .venv/
 ts_tests/node_modules/
