@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
-from pyteal import *
-from beaker import *
+
 from typing import Final
+
+from beaker import *
+from pyteal import *
 
 
 class AuctionState:
@@ -40,14 +42,14 @@ app = Application("Auction", state=AuctionState)
 
 
 @app.create
-def create():
+def create() -> Expr:
     # Set all global state to the default values
     return app.initialize_global_state()
 
 
 # Only allow app creator to opt the app account into a ASA
 @app.external(authorize=Authorize.only(Global.creator_address()))
-def opt_into_asset(asset: abi.Asset):
+def opt_into_asset(asset: abi.Asset) -> Expr:
     return Seq(
         # Verify a ASA hasn't already been opted into
         Assert(app.state.asa == Int(0)),
@@ -71,7 +73,7 @@ def start_auction(
     starting_price: abi.Uint64,
     length: abi.Uint64,
     axfer: abi.AssetTransferTransaction,
-):
+) -> Expr:
     return Seq(
         # Ensure the auction hasn't already been started
         Assert(app.state.auction_end.get() == Int(0)),
@@ -85,7 +87,7 @@ def start_auction(
 
 
 @Subroutine(TealType.none)
-def pay(receiver: Expr, amount: Expr):
+def pay(receiver: Expr, amount: Expr) -> Expr:
     return InnerTxnBuilder.Execute(
         {
             TxnField.type_enum: TxnType.Payment,
@@ -97,7 +99,7 @@ def pay(receiver: Expr, amount: Expr):
 
 
 @app.external
-def bid(payment: abi.PaymentTransaction, previous_bidder: abi.Account):
+def bid(payment: abi.PaymentTransaction, previous_bidder: abi.Account) -> Expr:
     return Seq(
         # Ensure auction hasn't ended
         Assert(Global.latest_timestamp() < app.state.auction_end.get()),
@@ -116,7 +118,7 @@ def bid(payment: abi.PaymentTransaction, previous_bidder: abi.Account):
 
 
 @app.external
-def claim_bid():
+def claim_bid() -> Expr:
     return Seq(
         # Auction end check is commented out for automated testing
         # Assert(Global.latest_timestamp() > app.state.auction_end.get()),
@@ -125,7 +127,7 @@ def claim_bid():
 
 
 @app.external
-def claim_asset(asset: abi.Asset, asset_creator: abi.Account):
+def claim_asset(asset: abi.Asset, asset_creator: abi.Account) -> Expr:
     return Seq(
         # Auction end check is commented out for automated testing
         # Assert(Global.latest_timestamp() > app.state.auction_end.get()),
@@ -145,7 +147,7 @@ def claim_asset(asset: abi.Asset, asset_creator: abi.Account):
 
 
 @app.delete
-def delete():
+def delete() -> Expr:
     return InnerTxnBuilder.Execute(
         {
             TxnField.type_enum: TxnType.Payment,
