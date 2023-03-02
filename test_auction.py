@@ -233,7 +233,7 @@ def test_create_auction_end(create_app):
 
 @pytest.mark.opt_in
 def test_opt_in(create_app, opt_in):
-    pass
+    assert len(app_client.client.account_info(app_client.app_addr)["assets"]) == 1
 
 
 #####################
@@ -316,7 +316,7 @@ def test_second_bid_app_balance(
 def test_claim_bid(
     create_app, opt_in, start_auction, send_first_bid, send_second_bid, claim_bid
 ):
-    pass
+    assert app_client.client.account_info(app_client.app_addr)["amount"] == 200_000
 
 
 ###################
@@ -324,7 +324,7 @@ def test_claim_bid(
 ###################
 
 
-@pytest.mark.claim_bid
+@pytest.mark.claim_asset
 def test_claim_asset(
     create_app,
     opt_in,
@@ -334,4 +334,4 @@ def test_claim_asset(
     claim_bid,
     claim_asset,
 ):
-    pass
+    assert app_client.client.account_info(app_client.app_addr)["assets"] == []
