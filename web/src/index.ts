@@ -1,9 +1,9 @@
 import algosdk from 'algosdk'
 import { Auction } from './beaker/auction_client'
-import { MyAlgoSession } from './wallets/myalgo'
+import { PeraSession } from './wallets/pera'
 import Utils from './utils'
 
-const myAlgo = new MyAlgoSession()
+const pera = new PeraSession()
 const algodClient = new algosdk.Algodv2('', 'https://testnet-api.algonode.cloud', '')
 let auctionAppId: number
 
@@ -18,15 +18,14 @@ buttonIds.forEach(id => {
 })
 
 async function signer (txns: algosdk.Transaction[]) {
-  const sTxns = await myAlgo.signTxns(txns)
-  return sTxns.map(s => s.blob)
+  return await pera.signTxns(txns)
 }
 
 buttons.connect.onclick = async () => {
-  await myAlgo.getAccounts()
+  await pera.getAccounts()
   buttons.create.disabled = false
-  myAlgo.accounts.forEach(account => {
-    accountsMenu.add(new Option(`${account.name} - ${account.address}`, account.address))
+  pera.accounts.forEach(account => {
+    accountsMenu.add(new Option(account, account))
   })
 }
 
