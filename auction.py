@@ -41,7 +41,7 @@ class AuctionState:
 app = Application("Auction", state=AuctionState)
 
 
-@app.create
+@app.create(bare=True)
 def create() -> Expr:
     # Set all global state to the default values
     return app.initialize_global_state()
