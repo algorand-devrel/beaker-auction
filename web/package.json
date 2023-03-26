@@ -4,14 +4,13 @@
   "main": "index.js",
   "scripts": {
     "test": "jest",
-    "build": "webpack --mode=production --node-env=production",
-    "build:dev": "webpack --mode=development",
-    "build:prod": "webpack --mode=production --node-env=production",
+    "build": "../auction.py && webpack --mode=production --node-env=production",
+    "build:dev": "../auction.py && webpack --mode=development",
+    "build:prod": "../auction.py && webpack --mode=production --node-env=production",
     "watch": "webpack --watch",
-    "serve": "webpack serve",
+    "serve": "../auction.py && webpack serve",
     "lint": "eslint . --ext ts",
-    "fix": "eslint . --ext ts --fix",
-    "beaker": "../auction.py && beaker generate ./application.json ./src/beaker/"
+    "fix": "eslint . --ext ts --fix"
   },
   "keywords": [],
   "author": "",
