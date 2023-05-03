@@ -1,17 +1,12 @@
-#############################################
-# NOTE: This has not been updated for V1 yet!
-#############################################
-
-from beaker import *
-from algosdk.dryrun_results import DryrunResponse
-from algosdk import transaction
-from algosdk.encoding import encode_address
-from algosdk.atomic_transaction_composer import (
-    TransactionWithSigner,
-    AtomicTransactionComposer,
-)
 import pytest
-from beaker.client.state_decode import decode_state
+from algosdk import transaction
+from algosdk.atomic_transaction_composer import (
+    AtomicTransactionComposer,
+    TransactionWithSigner,
+)
+from algosdk.dryrun_results import DryrunResponse
+from algosdk.encoding import encode_address
+from beaker import *
 
 ##########
 # fixtures
@@ -164,7 +159,7 @@ def end_auction():
     dr_res = DryrunResponse(app_client.client.dryrun(dr_req))
     global global_delta
 
-    global_delta = decode_state(dr_res.txns[0].global_delta)
+    global_delta = dr_res.txns[0].global_delta
 
 
 @pytest.fixture(scope="module")

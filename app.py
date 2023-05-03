@@ -79,6 +79,7 @@ def start_auction(
         Assert(app.state.auction_end.get() == Int(0)),
         # Verify axfer
         Assert(axfer.get().asset_receiver() == Global.current_application_address()),
+        Assert(axfer.get().xfer_asset() == app.state.asa),
         # Set global state
         app.state.asa_amt.set(axfer.get().asset_amount()),
         app.state.auction_end.set(Global.latest_timestamp() + length.get()),
@@ -106,6 +107,7 @@ def bid(payment: abi.PaymentTransaction, previous_bidder: abi.Account) -> Expr:
         # Verify payment transaction
         Assert(payment.get().amount() > app.state.highest_bid.get()),
         Assert(Txn.sender() == payment.get().sender()),
+        Assert(payment.get().receiver() == Global.current_application_address()),
         # Return previous bid if there was one
         If(
             app.state.highest_bidder.get() != Bytes(""),
@@ -139,7 +141,7 @@ def claim_asset(asset: abi.Asset, asset_creator: abi.Account) -> Expr:
                 TxnField.xfer_asset: app.state.asa,
                 TxnField.asset_amount: app.state.asa_amt,
                 TxnField.asset_receiver: app.state.highest_bidder,
-                # Close to asset creator since they are guranteed to be opted into the asset
+                # Close to asset creator since they are guranteed to be opted in
                 TxnField.asset_close_to: asset_creator.address(),
             }
         ),
