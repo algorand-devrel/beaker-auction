@@ -129,7 +129,7 @@ def claim_bid() -> Expr:
 
 
 @app.external
-def claim_asset(asset: abi.Asset, asset_creator: abi.Account) -> Expr:
+def claim_asset(asset: abi.Asset, close_to_account: abi.Account) -> Expr:
     return Seq(
         # Auction end check is commented out for automated testing
         # Assert(Global.latest_timestamp() > app.state.auction_end.get()),
@@ -141,8 +141,7 @@ def claim_asset(asset: abi.Asset, asset_creator: abi.Account) -> Expr:
                 TxnField.xfer_asset: app.state.asa,
                 TxnField.asset_amount: app.state.asa_amt,
                 TxnField.asset_receiver: app.state.highest_bidder,
-                # Close to asset creator since they are guranteed to be opted in
-                TxnField.asset_close_to: asset_creator.address(),
+                TxnField.asset_close_to: close_to_account.address(),
             }
         ),
     )
