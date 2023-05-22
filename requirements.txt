@@ -1,4 +1,0 @@
-# Install beaker from github to get latest version (not yet tagged)
-git+https://github.com/algorand-devrel/beaker@53b214d
-py-algorand-sdk==1.20.0
-pytest==7.2.0

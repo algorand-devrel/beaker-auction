@@ -31,16 +31,6 @@ const config = {
   module: {
     rules: [
       {
-        test: /\.(js)$/,
-        exclude: /node_modules\/(?!beaker-ts)/,
-        use: {
-          loader: 'babel-loader'
-        },
-        resolve: {
-          fullySpecified: false
-        }
-      },
-      {
         test: /\.(ts|tsx)$/i,
         loader: 'ts-loader',
         exclude: ['/node_modules/']
@@ -56,13 +46,7 @@ const config = {
     noParse: [require.resolve('typescript/lib/typescript.js')]
   },
   resolve: {
-    extensions: ['.tsx', '.ts', '.jsx', '.js', '...'],
-    fallback: {
-      crypto: require.resolve('crypto-browserify'),
-      stream: require.resolve('stream-browserify'),
-      buffer: require.resolve('buffer'),
-      fs: false
-    }
+    extensions: ['.tsx', '.ts', '.jsx', '.js', '...']
   }
 }
 
